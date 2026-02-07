@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 /// Unique identifier for a ticket (e.g., TIK001, TIK002)
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -12,18 +12,21 @@ impl TicketId {
         Self(format!("TIK{:03}", counter))
     }
 
-    /// Parses a TicketId from a string (e.g., "TIK001")
-    pub fn from_str(s: &str) -> Result<Self, crate::error::HlaviError> {
+    /// Returns the string representation
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl FromStr for TicketId {
+    type Err = crate::error::HlaviError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.starts_with("TIK") && s.len() >= 4 {
             Ok(Self(s.to_string()))
         } else {
             Err(crate::error::HlaviError::InvalidTicketId(s.to_string()))
         }
-    }
-
-    /// Returns the string representation
-    pub fn as_str(&self) -> &str {
-        &self.0
     }
 }
 

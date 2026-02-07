@@ -4,7 +4,10 @@ use crate::{
     storage::Storage,
 };
 use async_trait::async_trait;
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 use tokio::fs;
 
 /// File-based storage implementation
@@ -16,6 +19,7 @@ impl FileStorage {
     const HLAVI_DIR: &'static str = ".hlavi";
     const TICKETS_DIR: &'static str = "tickets";
     const BOARD_FILE: &'static str = "board.json";
+    #[allow(dead_code)]
     const CONFIG_FILE: &'static str = "config.toml";
 
     /// Creates a new FileStorage instance for the given project root
