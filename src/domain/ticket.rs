@@ -129,6 +129,19 @@ impl AcceptanceCriteria {
         self.completed = true;
         self.completed_at = Some(Utc::now());
     }
+
+    pub fn mark_incomplete(&mut self) {
+        self.completed = false;
+        self.completed_at = None;
+    }
+
+    pub fn toggle(&mut self) {
+        if self.completed {
+            self.mark_incomplete();
+        } else {
+            self.mark_completed();
+        }
+    }
 }
 
 /// A kanban ticket
@@ -280,5 +293,76 @@ mod tests {
 
         assert_eq!(ticket.acceptance_criteria.len(), 2);
         assert!(!ticket.all_acceptance_criteria_completed());
+    }
+
+    #[test]
+    fn test_acceptance_criteria_mark_completed() {
+        let mut ac = AcceptanceCriteria::new(1, "Test AC".to_string());
+
+        assert!(!ac.completed);
+        assert!(ac.completed_at.is_none());
+
+        ac.mark_completed();
+
+        assert!(ac.completed);
+        assert!(ac.completed_at.is_some());
+    }
+
+    #[test]
+    fn test_acceptance_criteria_mark_incomplete() {
+        let mut ac = AcceptanceCriteria::new(1, "Test AC".to_string());
+
+        // First mark as completed
+        ac.mark_completed();
+        assert!(ac.completed);
+        assert!(ac.completed_at.is_some());
+
+        // Then mark as incomplete
+        ac.mark_incomplete();
+
+        assert!(!ac.completed);
+        assert!(ac.completed_at.is_none());
+    }
+
+    #[test]
+    fn test_acceptance_criteria_toggle() {
+        let mut ac = AcceptanceCriteria::new(1, "Test AC".to_string());
+
+        // Initially incomplete
+        assert!(!ac.completed);
+        assert!(ac.completed_at.is_none());
+
+        // Toggle to completed
+        ac.toggle();
+        assert!(ac.completed);
+        assert!(ac.completed_at.is_some());
+
+        // Toggle back to incomplete
+        ac.toggle();
+        assert!(!ac.completed);
+        assert!(ac.completed_at.is_none());
+    }
+
+    #[test]
+    fn test_ticket_all_acceptance_criteria_completed() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+
+        // No criteria - should return false
+        assert!(!ticket.all_acceptance_criteria_completed());
+
+        // Add criteria
+        ticket.add_acceptance_criterion("AC 1".to_string());
+        ticket.add_acceptance_criterion("AC 2".to_string());
+
+        // None completed
+        assert!(!ticket.all_acceptance_criteria_completed());
+
+        // Complete one
+        ticket.acceptance_criteria[0].mark_completed();
+        assert!(!ticket.all_acceptance_criteria_completed());
+
+        // Complete all
+        ticket.acceptance_criteria[1].mark_completed();
+        assert!(ticket.all_acceptance_criteria_completed());
     }
 }
