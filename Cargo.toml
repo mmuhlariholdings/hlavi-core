@@ -1,0 +1,42 @@
+[package]
+name = "hlavi-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Mmuhlari Holdings"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mmuhlariholdings/hlavi-core"
+homepage = "https://hlavi.com"
+description = "Core business logic and domain models for Hlavi kanban task management"
+rust-version = "1.75"
+
+[lib]
+name = "hlavi_core"
+path = "src/lib.rs"
+
+[dependencies]
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Domain types
+uuid = { version = "1.6", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Storage
+rusqlite = { version = "0.31", features = ["bundled"], optional = true }
+
+# Async support
+async-trait = "0.1"
+
+[features]
+default = ["file-storage"]
+file-storage = []
+sqlite-storage = ["rusqlite"]
+
+[dev-dependencies]
+tokio = { version = "1.35", features = ["full", "test-util"] }
+tempfile = "3.8"
