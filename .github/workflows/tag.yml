@@ -35,6 +35,19 @@ jobs:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
+      - name: Verify token generation
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "❌ Token NOT generated"
+            exit 1
+          fi
+          echo "✅ Token generated successfully (length: ${#GH_TOKEN} characters)"
+          # Test the token by making a simple API call
+          echo "Testing token with GitHub API..."
+          gh api user --jq '"✅ Authenticated as: " + .login'
+
   tag:
     name: Create Tag
     needs: generate-token
