@@ -147,9 +147,9 @@ hlavi-core = { git = "https://github.com/mmuhlariholdings/hlavi-core", tag = "v0
 - **Minor (0.x.0)**: New features, non-breaking API additions
 - **Major (x.0.0)**: Breaking API changes
 
-Use the GitHub Actions "Version Bump" workflow to create releases:
+Use the GitHub Actions "Tag and Release" workflow to create releases:
 1. Go to Actions tab
-2. Select "Version Bump" workflow
+2. Select "Tag and Release" workflow
 3. Click "Run workflow"
 4. Choose version type (patch/minor/major)
 
