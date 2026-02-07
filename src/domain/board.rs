@@ -132,10 +132,10 @@ mod tests {
         let mut board = Board::default();
 
         let id1 = board.next_ticket_id();
-        assert_eq!(id1.as_str(), "TIK001");
+        assert_eq!(id1.as_str(), "HLA1");
 
         let id2 = board.next_ticket_id();
-        assert_eq!(id2.as_str(), "TIK002");
+        assert_eq!(id2.as_str(), "HLA2");
     }
 
     #[test]

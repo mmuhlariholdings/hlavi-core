@@ -2,14 +2,14 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::{fmt, str::FromStr};
 
-/// Unique identifier for a ticket (e.g., TIK001, TIK002)
+/// Unique identifier for a ticket (e.g., HLA1, HLA2, HLA100)
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TicketId(String);
 
 impl TicketId {
     /// Creates a new TicketId from a counter
     pub fn new(counter: u32) -> Self {
-        Self(format!("TIK{:03}", counter))
+        Self(format!("HLA{}", counter))
     }
 
     /// Returns the string representation
@@ -22,8 +22,13 @@ impl FromStr for TicketId {
     type Err = crate::error::HlaviError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("TIK") && s.len() >= 4 {
-            Ok(Self(s.to_string()))
+        if s.starts_with("HLA") && s.len() >= 4 {
+            // Verify the rest is a valid number
+            if s[3..].parse::<u32>().is_ok() {
+                Ok(Self(s.to_string()))
+            } else {
+                Err(crate::error::HlaviError::InvalidTicketId(s.to_string()))
+            }
         } else {
             Err(crate::error::HlaviError::InvalidTicketId(s.to_string()))
         }
@@ -237,18 +242,26 @@ mod tests {
     #[test]
     fn test_ticket_id_creation() {
         let id = TicketId::new(1);
-        assert_eq!(id.as_str(), "TIK001");
+        assert_eq!(id.as_str(), "HLA1");
 
         let id = TicketId::new(42);
-        assert_eq!(id.as_str(), "TIK042");
+        assert_eq!(id.as_str(), "HLA42");
+
+        let id = TicketId::new(1000);
+        assert_eq!(id.as_str(), "HLA1000");
     }
 
     #[test]
     fn test_ticket_id_parsing() {
-        let id = TicketId::from_str("TIK123").unwrap();
-        assert_eq!(id.as_str(), "TIK123");
+        let id = TicketId::from_str("HLA1").unwrap();
+        assert_eq!(id.as_str(), "HLA1");
+
+        let id = TicketId::from_str("HLA123").unwrap();
+        assert_eq!(id.as_str(), "HLA123");
 
         assert!(TicketId::from_str("INVALID").is_err());
+        assert!(TicketId::from_str("HLA").is_err());
+        assert!(TicketId::from_str("HLAabc").is_err());
     }
 
     #[test]
