@@ -20,9 +20,9 @@ permissions:
   contents: write
 
 jobs:
-  bump:
-    name: Bump
-    uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-version-bump.yml@main
+  tag-and-release:
+    name: Tag and Release
+    uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-tag-and-release.yml@main
     with:
       version-type: ${{ github.event.inputs.version_type }}
       custom-version: ${{ github.event.inputs.custom_version }}
