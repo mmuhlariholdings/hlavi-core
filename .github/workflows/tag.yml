@@ -1,0 +1,34 @@
+name: Create Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to tag (e.g., 0.1.4 or v0.1.4 or 0.1.4-pr.123)'
+        required: true
+        type: string
+      ref:
+        description: 'Branch, tag, or commit SHA to tag'
+        required: false
+        type: string
+        default: 'main'
+      update_cargo_toml:
+        description: 'Update Cargo.toml version'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    name: Create Tag
+    uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-tag.yml@main
+    with:
+      version: ${{ github.event.inputs.version }}
+      ref: ${{ github.event.inputs.ref }}
+      package-name: 'hlavi-core'
+      update-cargo-toml: ${{ github.event.inputs.update_cargo_toml == 'true' }}
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}

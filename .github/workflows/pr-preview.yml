@@ -1,0 +1,18 @@
+name: PR Preview
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+
+permissions:
+  contents: write
+
+jobs:
+  preview:
+    name: Preview Build
+    uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-pr-preview.yml@main
+    with:
+      package-name: 'hlavi-core'
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}

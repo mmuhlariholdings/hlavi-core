@@ -1,0 +1,27 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to release (e.g., v0.1.4)'
+        required: true
+        type: string
+      create_draft_release:
+        description: 'Create draft release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release from Tag
+    uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-release-from-tag.yml@main
+    with:
+      tag: ${{ github.event.inputs.tag }}
+      create-draft-release: ${{ github.event.inputs.create_draft_release == 'true' }}
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
