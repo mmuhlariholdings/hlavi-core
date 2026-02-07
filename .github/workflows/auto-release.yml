@@ -8,8 +8,13 @@ permissions:
   contents: write
 
 jobs:
+  ci:
+    name: CI
+    uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-ci.yml@main
+
   auto-release:
     name: Auto Tag and Release
+    needs: ci
     uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-auto-release.yml@main
     with:
       package-name: 'hlavi-core'

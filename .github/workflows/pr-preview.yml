@@ -10,8 +10,13 @@ permissions:
   pull-requests: write
 
 jobs:
+  ci:
+    name: CI
+    uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-ci.yml@main
+
   preview:
     name: Preview Build
+    needs: ci
     uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-pr-preview.yml@main
     with:
       package-name: 'hlavi-core'
