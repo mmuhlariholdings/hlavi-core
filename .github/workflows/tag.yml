@@ -22,8 +22,46 @@ permissions:
   contents: write
 
 jobs:
+  generate-token:
+    name: Generate Token
+    runs-on: ubuntu-latest
+    outputs:
+      token: ${{ steps.final-token.outputs.result }}
+    steps:
+      - name: Check which token to use
+        id: check
+        env:
+          APP_ID: ${{ secrets.RELEASE_APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+        run: |
+          if [ -n "$APP_ID" ] && [ -n "$APP_PRIVATE_KEY" ]; then
+            echo "Using GitHub App token for bypass permissions"
+            echo "use_app=true" >> $GITHUB_OUTPUT
+          else
+            echo "Using standard GitHub token"
+            echo "use_app=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate GitHub App token
+        if: steps.check.outputs.use_app == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Set final token
+        id: final-token
+        run: |
+          if [ "${{ steps.check.outputs.use_app }}" == "true" ]; then
+            echo "result=${{ steps.app-token.outputs.token }}" >> $GITHUB_OUTPUT
+          else
+            echo "result=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_OUTPUT
+          fi
+
   tag:
     name: Create Tag
+    needs: generate-token
     uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-tag.yml@main
     with:
       version: ${{ github.event.inputs.version }}
@@ -31,4 +69,4 @@ jobs:
       package-name: 'hlavi-core'
       update-cargo-toml: ${{ github.event.inputs.update_cargo_toml == 'true' }}
     secrets:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
+      github-token: ${{ needs.generate-token.outputs.token }}
