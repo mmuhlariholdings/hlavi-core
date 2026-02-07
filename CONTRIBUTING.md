@@ -62,6 +62,7 @@ or with ticket ID:
 - **refactor** → code restructuring
 - **test** → adding or updating tests
 - **ci** → CI/CD changes
+- **release** → version bumps and releases
 
 ### Examples
 
