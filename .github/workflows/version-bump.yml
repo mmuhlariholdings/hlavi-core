@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   bump:
+    name: Bump
     uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-version-bump.yml@main
     with:
       version-type: ${{ github.event.inputs.version_type }}
