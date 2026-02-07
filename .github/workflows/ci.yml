@@ -8,6 +8,7 @@ on:
 
 jobs:
   ci:
+    name: CI
     uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-ci.yml@main
     with:
       skip-build-matrix: true
