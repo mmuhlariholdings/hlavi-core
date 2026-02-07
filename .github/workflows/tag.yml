@@ -50,16 +50,25 @@ jobs:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
-      - name: Set final token
-        id: final-token
+      - name: Set final token (App)
+        if: steps.check.outputs.use_app == 'true'
+        id: set-app-token
+        run: echo "result=${{ steps.app-token.outputs.token }}" >> $GITHUB_OUTPUT
+
+      - name: Set final token (GitHub)
+        if: steps.check.outputs.use_app == 'false'
+        id: set-github-token
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: echo "result=$GITHUB_TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Output final token
+        id: final-token
         run: |
           if [ "${{ steps.check.outputs.use_app }}" == "true" ]; then
-            echo "result=$APP_TOKEN" >> $GITHUB_OUTPUT
+            echo "result=${{ steps.set-app-token.outputs.result }}" >> $GITHUB_OUTPUT
           else
-            echo "result=$GITHUB_TOKEN" >> $GITHUB_OUTPUT
+            echo "result=${{ steps.set-github-token.outputs.result }}" >> $GITHUB_OUTPUT
           fi
 
   tag:
