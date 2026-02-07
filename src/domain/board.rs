@@ -1,4 +1,4 @@
-use crate::domain::ticket::{Ticket, TicketId, TicketStatus};
+use crate::domain::ticket::{TicketId, TicketStatus};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

@@ -85,7 +85,7 @@ impl Storage for FileStorage {
             return Err(HlaviError::TicketNotFound(id.to_string()));
         }
 
-        let contents = fs::read_to_string(file_path).await?;
+        let contents = fs::read_to_string(&file_path).await?;
         let ticket: Ticket = serde_json::from_str(&contents)?;
 
         Ok(ticket)
@@ -98,8 +98,8 @@ impl Storage for FileStorage {
             return Ok(Vec::new());
         }
 
-        let mut entries = fs::read_dir(tickets_dir).await?;
-        let mut ids = Vec::new();
+        let mut entries = fs::read_dir(&tickets_dir).await?;
+        let mut ids: Vec<TicketId> = Vec::new();
 
         while let Some(entry) = entries.next_entry().await? {
             let path = entry.path();
@@ -143,7 +143,7 @@ impl Storage for FileStorage {
             return Err(HlaviError::BoardNotInitialized);
         }
 
-        let contents = fs::read_to_string(board_file).await?;
+        let contents = fs::read_to_string(&board_file).await?;
         let board: Board = serde_json::from_str(&contents)?;
 
         Ok(board)
