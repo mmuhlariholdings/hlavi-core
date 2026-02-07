@@ -44,5 +44,4 @@ jobs:
       ref: ${{ github.event.inputs.ref }}
       package-name: 'hlavi-core'
       update-cargo-toml: ${{ github.event.inputs.update_cargo_toml == 'true' }}
-    secrets:
       github-token: ${{ needs.generate-token.outputs.token }}

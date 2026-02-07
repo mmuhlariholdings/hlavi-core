@@ -14,11 +14,23 @@ jobs:
     name: CI
     uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-ci.yml@main
 
+  generate-token:
+    name: Generate Token
+    runs-on: ubuntu-latest
+    outputs:
+      token: ${{ steps.app-token.outputs.token }}
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
   preview:
     name: Preview Build
-    needs: ci
+    needs: [ci, generate-token]
     uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-pr-preview.yml@main
     with:
       package-name: 'hlavi-core'
-    secrets:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
+      github-token: ${{ needs.generate-token.outputs.token }}
