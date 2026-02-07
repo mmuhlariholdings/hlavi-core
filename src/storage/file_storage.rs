@@ -61,8 +61,7 @@ impl Storage for FileStorage {
         // Create .gitignore
         let gitignore_path = self.root_path.join(".gitignore");
         if !gitignore_path.exists() {
-            fs::write(gitignore_path, "# Local caches\n*.db\n*.db-*\n")
-                .await?;
+            fs::write(gitignore_path, "# Local caches\n*.db\n*.db-*\n").await?;
         }
 
         Ok(())
