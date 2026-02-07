@@ -2,7 +2,7 @@
 name = "hlavi-core"
 version = "0.1.0"
 edition = "2021"
-authors = ["M Muhlari Holdings"]
+authors = ["M Muhlari Holdings (Pty) Ltd"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/mmuhlariholdings/hlavi-core"
 homepage = "https://hlavi.com"
