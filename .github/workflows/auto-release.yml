@@ -21,5 +21,4 @@ jobs:
       create-draft-release: false
       default-bump: 'patch'
     secrets:
-      app-id: ${{ secrets.RELEASE_APP_ID }}
-      app-private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      github-token: ${{ secrets.HLAVI_RELEASE_PAT }}
