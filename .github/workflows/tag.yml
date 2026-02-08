@@ -22,27 +22,12 @@ permissions:
   contents: write
 
 jobs:
-  generate-token:
-    name: Generate Token
-    runs-on: ubuntu-latest
-    outputs:
-      token: ${{ steps.app-token.outputs.token }}
-    steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.RELEASE_APP_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-
   tag:
     name: Create Tag
-    needs: generate-token
     uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-tag.yml@main
     with:
       version: ${{ github.event.inputs.version }}
       ref: ${{ github.event.inputs.ref }}
       package-name: 'hlavi-core'
       update-cargo-toml: ${{ github.event.inputs.update_cargo_toml == 'true' }}
-    secrets:
-      github-token: ${{ needs.generate-token.outputs.token }}
+      github-token: ${{ secrets.HLAVI_RELEASE_PAT }}

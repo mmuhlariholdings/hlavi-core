@@ -23,5 +23,4 @@ jobs:
     with:
       tag: ${{ github.event.inputs.tag }}
       create-draft-release: ${{ github.event.inputs.create_draft_release == 'true' }}
-    secrets:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
+      github-token: ${{ secrets.HLAVI_RELEASE_PAT }}
