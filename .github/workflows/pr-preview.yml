@@ -20,4 +20,5 @@ jobs:
     uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-pr-preview.yml@main
     with:
       package-name: 'hlavi-core'
+    secrets:
       github-token: ${{ secrets.HLAVI_RELEASE_PAT }}

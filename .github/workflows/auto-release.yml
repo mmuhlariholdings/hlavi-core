@@ -20,4 +20,5 @@ jobs:
       package-name: 'hlavi-core'
       create-draft-release: false
       default-bump: 'patch'
+    secrets:
       github-token: ${{ secrets.HLAVI_RELEASE_PAT }}
