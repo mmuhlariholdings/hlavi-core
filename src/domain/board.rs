@@ -87,8 +87,7 @@ impl Board {
 
     /// Adds a task to the board tracking
     pub fn add_task(&mut self, task_id: TaskId) {
-        self.tasks
-            .insert(task_id.as_str().to_string(), task_id);
+        self.tasks.insert(task_id.as_str().to_string(), task_id);
     }
 
     /// Gets the column configuration for a status
