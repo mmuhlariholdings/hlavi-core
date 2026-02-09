@@ -189,6 +189,12 @@ impl Ticket {
         }
     }
 
+    /// Sets the title
+    pub fn set_title(&mut self, title: String) {
+        self.title = title;
+        self.updated_at = Utc::now();
+    }
+
     /// Sets the description
     pub fn set_description(&mut self, description: String) {
         self.description = Some(description);
@@ -468,6 +474,26 @@ mod tests {
         // Complete all
         ticket.acceptance_criteria[1].mark_completed();
         assert!(ticket.all_acceptance_criteria_completed());
+    }
+
+    #[test]
+    fn test_set_title() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Original Title".to_string());
+        assert_eq!(ticket.title, "Original Title");
+
+        ticket.set_title("Updated Title".to_string());
+        assert_eq!(ticket.title, "Updated Title");
+    }
+
+    #[test]
+    fn test_set_title_updates_updated_at() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let initial_updated_at = ticket.updated_at;
+
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        ticket.set_title("New Title".to_string());
+
+        assert!(ticket.updated_at > initial_updated_at);
     }
 
     #[test]
