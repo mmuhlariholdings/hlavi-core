@@ -7,9 +7,12 @@ use std::{fmt, str::FromStr};
 pub struct TicketId(String);
 
 impl TicketId {
+    // Default prefix for ticket IDs (could be made configurable in the future)
+    const DEFAULT_PREFIX: &'static str = "HLA";
+
     /// Creates a new TicketId from a counter
     pub fn new(counter: u32) -> Self {
-        Self(format!("HLA{}", counter))
+        Self(format!("{}{}", Self::DEFAULT_PREFIX, counter))
     }
 
     /// Returns the string representation
@@ -22,10 +25,15 @@ impl FromStr for TicketId {
     type Err = crate::error::HlaviError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("HLA") && s.len() >= 4 {
+        // Convert to uppercase for case-insensitive comparison
+        let normalized = s.to_uppercase();
+        let prefix = TicketId::DEFAULT_PREFIX;
+
+        if normalized.starts_with(prefix) && normalized.len() > prefix.len() {
             // Verify the rest is a valid number
-            if s[3..].parse::<u32>().is_ok() {
-                Ok(Self(s.to_string()))
+            if normalized[prefix.len()..].parse::<u32>().is_ok() {
+                // Store the normalized (uppercase) form
+                Ok(Self(normalized))
             } else {
                 Err(crate::error::HlaviError::InvalidTicketId(s.to_string()))
             }
@@ -341,6 +349,36 @@ mod tests {
         assert!(TicketId::from_str("INVALID").is_err());
         assert!(TicketId::from_str("HLA").is_err());
         assert!(TicketId::from_str("HLAabc").is_err());
+    }
+
+    #[test]
+    fn test_ticket_id_parsing_case_insensitive() {
+        // Lowercase
+        let id = TicketId::from_str("hla1").unwrap();
+        assert_eq!(id.as_str(), "HLA1");
+
+        let id = TicketId::from_str("hla42").unwrap();
+        assert_eq!(id.as_str(), "HLA42");
+
+        // Mixed case
+        let id = TicketId::from_str("Hla123").unwrap();
+        assert_eq!(id.as_str(), "HLA123");
+
+        let id = TicketId::from_str("HlA99").unwrap();
+        assert_eq!(id.as_str(), "HLA99");
+
+        let id = TicketId::from_str("hLa5").unwrap();
+        assert_eq!(id.as_str(), "HLA5");
+
+        // All variations should normalize to uppercase
+        assert_eq!(
+            TicketId::from_str("hla1").unwrap(),
+            TicketId::from_str("HLA1").unwrap()
+        );
+        assert_eq!(
+            TicketId::from_str("Hla1").unwrap(),
+            TicketId::from_str("HLA1").unwrap()
+        );
     }
 
     #[test]
