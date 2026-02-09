@@ -46,6 +46,12 @@ impl Storage for SqliteStorage {
         ))
     }
 
+    async fn search_tickets(&self, _query: &str) -> Result<Vec<Ticket>> {
+        Err(HlaviError::StorageError(
+            "SQLite storage not yet implemented".to_string(),
+        ))
+    }
+
     async fn delete_ticket(&self, _id: &TicketId) -> Result<()> {
         Err(HlaviError::StorageError(
             "SQLite storage not yet implemented".to_string(),

@@ -119,6 +119,38 @@ impl Storage for FileStorage {
         Ok(ids)
     }
 
+    async fn search_tickets(&self, query: &str) -> Result<Vec<Ticket>> {
+        let ticket_ids = self.list_ticket_ids().await?;
+        let query_lower = query.to_lowercase();
+        let mut matching_tickets = Vec::new();
+
+        for id in ticket_ids {
+            let ticket = self.load_ticket(&id).await?;
+
+            // Check if query matches title
+            let title_matches = ticket.title.to_lowercase().contains(&query_lower);
+
+            // Check if query matches description
+            let description_matches = ticket
+                .description
+                .as_ref()
+                .map(|d| d.to_lowercase().contains(&query_lower))
+                .unwrap_or(false);
+
+            // Check if query matches any acceptance criteria
+            let ac_matches = ticket
+                .acceptance_criteria
+                .iter()
+                .any(|ac| ac.description.to_lowercase().contains(&query_lower));
+
+            if title_matches || description_matches || ac_matches {
+                matching_tickets.push(ticket);
+            }
+        }
+
+        Ok(matching_tickets)
+    }
+
     async fn delete_ticket(&self, id: &TicketId) -> Result<()> {
         let file_path = self.ticket_file(id);
 
@@ -206,5 +238,129 @@ mod tests {
         let loaded = storage.load_ticket(&ticket.id).await.unwrap();
         assert_eq!(loaded.start_date, Some(start));
         assert_eq!(loaded.end_date, Some(end));
+    }
+
+    #[tokio::test]
+    async fn test_search_tickets_by_title() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = FileStorage::new(temp_dir.path());
+        storage.initialize().await.unwrap();
+
+        let ticket1 = Ticket::new(TicketId::new(1), "First Task".to_string());
+        let ticket2 = Ticket::new(TicketId::new(2), "Second Task".to_string());
+        let ticket3 = Ticket::new(TicketId::new(3), "Third Item".to_string());
+
+        storage.save_ticket(&ticket1).await.unwrap();
+        storage.save_ticket(&ticket2).await.unwrap();
+        storage.save_ticket(&ticket3).await.unwrap();
+
+        let results = storage.search_tickets("task").await.unwrap();
+        assert_eq!(results.len(), 2);
+        assert!(results.iter().any(|t| t.id.as_str() == "HLA1"));
+        assert!(results.iter().any(|t| t.id.as_str() == "HLA2"));
+    }
+
+    #[tokio::test]
+    async fn test_search_tickets_case_insensitive() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = FileStorage::new(temp_dir.path());
+        storage.initialize().await.unwrap();
+
+        let ticket = Ticket::new(TicketId::new(1), "First Task".to_string());
+        storage.save_ticket(&ticket).await.unwrap();
+
+        let results = storage.search_tickets("FIRST").await.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].id.as_str(), "HLA1");
+
+        let results = storage.search_tickets("first").await.unwrap();
+        assert_eq!(results.len(), 1);
+
+        let results = storage.search_tickets("FiRsT").await.unwrap();
+        assert_eq!(results.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_search_tickets_by_description() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = FileStorage::new(temp_dir.path());
+        storage.initialize().await.unwrap();
+
+        let mut ticket = Ticket::new(TicketId::new(1), "Test Ticket".to_string());
+        ticket.set_description("This is a detailed description".to_string());
+        storage.save_ticket(&ticket).await.unwrap();
+
+        let results = storage.search_tickets("detailed").await.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].id.as_str(), "HLA1");
+    }
+
+    #[tokio::test]
+    async fn test_search_tickets_by_acceptance_criteria() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = FileStorage::new(temp_dir.path());
+        storage.initialize().await.unwrap();
+
+        let mut ticket = Ticket::new(TicketId::new(1), "Test Ticket".to_string());
+        ticket.add_acceptance_criterion("User can login".to_string());
+        ticket.add_acceptance_criterion("User can logout".to_string());
+        storage.save_ticket(&ticket).await.unwrap();
+
+        let results = storage.search_tickets("login").await.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].id.as_str(), "HLA1");
+
+        let results = storage.search_tickets("logout").await.unwrap();
+        assert_eq!(results.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_search_tickets_no_matches() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = FileStorage::new(temp_dir.path());
+        storage.initialize().await.unwrap();
+
+        let ticket = Ticket::new(TicketId::new(1), "Test Ticket".to_string());
+        storage.save_ticket(&ticket).await.unwrap();
+
+        let results = storage.search_tickets("nonexistent").await.unwrap();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_search_tickets_empty_storage() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = FileStorage::new(temp_dir.path());
+        storage.initialize().await.unwrap();
+
+        let results = storage.search_tickets("anything").await.unwrap();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_search_tickets_multiple_fields() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = FileStorage::new(temp_dir.path());
+        storage.initialize().await.unwrap();
+
+        let mut ticket1 = Ticket::new(TicketId::new(1), "Authentication Feature".to_string());
+        ticket1.set_description("Implement user authentication".to_string());
+        ticket1.add_acceptance_criterion("User can login with password".to_string());
+
+        let mut ticket2 = Ticket::new(TicketId::new(2), "Another Feature".to_string());
+        ticket2.set_description("Some other feature".to_string());
+
+        storage.save_ticket(&ticket1).await.unwrap();
+        storage.save_ticket(&ticket2).await.unwrap();
+
+        // Should match ticket1 in title, description, and AC
+        let results = storage.search_tickets("authentication").await.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].id.as_str(), "HLA1");
+
+        // Should match ticket1 in AC only
+        let results = storage.search_tickets("password").await.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].id.as_str(), "HLA1");
     }
 }
