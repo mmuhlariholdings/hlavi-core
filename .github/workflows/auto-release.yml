@@ -15,6 +15,7 @@ jobs:
   auto-release:
     name: Auto Tag and Release
     needs: ci
+    if: github.event.head_commit.author.name != 'github-actions[bot]'
     uses: mmuhlariholdings/hlavi-workflows/.github/workflows/rust-auto-release.yml@main
     with:
       package-name: 'hlavi-core'
