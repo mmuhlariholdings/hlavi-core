@@ -230,7 +230,11 @@ impl Ticket {
     }
 
     /// Sets both dates atomically with validation
-    pub fn set_date_range(&mut self, start: DateTime<Utc>, end: DateTime<Utc>) -> Result<(), crate::error::HlaviError> {
+    pub fn set_date_range(
+        &mut self,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Result<(), crate::error::HlaviError> {
         if start > end {
             return Err(crate::error::HlaviError::InvalidDateRange {
                 start: start.to_rfc3339(),
