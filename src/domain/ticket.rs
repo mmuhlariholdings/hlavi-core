@@ -156,6 +156,10 @@ pub struct Ticket {
     pub updated_at: DateTime<Utc>,
     pub agent_assigned: bool,
     pub rejection_reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub start_date: Option<DateTime<Utc>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end_date: Option<DateTime<Utc>>,
 }
 
 impl Ticket {
@@ -172,6 +176,8 @@ impl Ticket {
             updated_at: now,
             agent_assigned: false,
             rejection_reason: None,
+            start_date: None,
+            end_date: None,
         }
     }
 
@@ -179,6 +185,62 @@ impl Ticket {
     pub fn set_description(&mut self, description: String) {
         self.description = Some(description);
         self.updated_at = Utc::now();
+    }
+
+    /// Sets the start date with validation against end_date
+    pub fn set_start_date(&mut self, date: DateTime<Utc>) -> Result<(), crate::error::HlaviError> {
+        if let Some(end) = self.end_date {
+            if date > end {
+                return Err(crate::error::HlaviError::InvalidDateRange {
+                    start: date.to_rfc3339(),
+                    end: end.to_rfc3339(),
+                });
+            }
+        }
+        self.start_date = Some(date);
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    /// Sets the end date with validation against start_date
+    pub fn set_end_date(&mut self, date: DateTime<Utc>) -> Result<(), crate::error::HlaviError> {
+        if let Some(start) = self.start_date {
+            if date < start {
+                return Err(crate::error::HlaviError::InvalidDateRange {
+                    start: start.to_rfc3339(),
+                    end: date.to_rfc3339(),
+                });
+            }
+        }
+        self.end_date = Some(date);
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    /// Clears the start date
+    pub fn clear_start_date(&mut self) {
+        self.start_date = None;
+        self.updated_at = Utc::now();
+    }
+
+    /// Clears the end date
+    pub fn clear_end_date(&mut self) {
+        self.end_date = None;
+        self.updated_at = Utc::now();
+    }
+
+    /// Sets both dates atomically with validation
+    pub fn set_date_range(&mut self, start: DateTime<Utc>, end: DateTime<Utc>) -> Result<(), crate::error::HlaviError> {
+        if start > end {
+            return Err(crate::error::HlaviError::InvalidDateRange {
+                start: start.to_rfc3339(),
+                end: end.to_rfc3339(),
+            });
+        }
+        self.start_date = Some(start);
+        self.end_date = Some(end);
+        self.updated_at = Utc::now();
+        Ok(())
     }
 
     /// Adds an acceptance criterion
@@ -364,5 +426,136 @@ mod tests {
         // Complete all
         ticket.acceptance_criteria[1].mark_completed();
         assert!(ticket.all_acceptance_criteria_completed());
+    }
+
+    #[test]
+    fn test_set_start_date() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let start = Utc::now();
+        assert!(ticket.set_start_date(start).is_ok());
+        assert_eq!(ticket.start_date, Some(start));
+    }
+
+    #[test]
+    fn test_set_end_date() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let end = Utc::now();
+        assert!(ticket.set_end_date(end).is_ok());
+        assert_eq!(ticket.end_date, Some(end));
+    }
+
+    #[test]
+    fn test_set_date_range_valid() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let start = Utc::now();
+        let end = start + chrono::Duration::days(7);
+        assert!(ticket.set_date_range(start, end).is_ok());
+        assert_eq!(ticket.start_date, Some(start));
+        assert_eq!(ticket.end_date, Some(end));
+    }
+
+    #[test]
+    fn test_set_date_range_invalid() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let start = Utc::now();
+        let end = start - chrono::Duration::days(1);
+        assert!(ticket.set_date_range(start, end).is_err());
+    }
+
+    #[test]
+    fn test_set_start_date_validates_against_existing_end() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let end = Utc::now();
+        let invalid_start = end + chrono::Duration::days(1);
+        ticket.set_end_date(end).unwrap();
+        assert!(ticket.set_start_date(invalid_start).is_err());
+    }
+
+    #[test]
+    fn test_set_end_date_validates_against_existing_start() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let start = Utc::now();
+        let invalid_end = start - chrono::Duration::days(1);
+        ticket.set_start_date(start).unwrap();
+        assert!(ticket.set_end_date(invalid_end).is_err());
+    }
+
+    #[test]
+    fn test_set_start_date_same_as_end_date() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let date = Utc::now();
+        ticket.set_end_date(date).unwrap();
+        assert!(ticket.set_start_date(date).is_ok());
+    }
+
+    #[test]
+    fn test_clear_dates() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let start = Utc::now();
+        let end = start + chrono::Duration::days(7);
+
+        ticket.set_date_range(start, end).unwrap();
+        assert!(ticket.start_date.is_some());
+        assert!(ticket.end_date.is_some());
+
+        ticket.clear_start_date();
+        assert!(ticket.start_date.is_none());
+
+        ticket.clear_end_date();
+        assert!(ticket.end_date.is_none());
+    }
+
+    #[test]
+    fn test_date_setters_update_updated_at() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let initial_updated_at = ticket.updated_at;
+
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        ticket.set_start_date(Utc::now()).unwrap();
+        assert!(ticket.updated_at > initial_updated_at);
+    }
+
+    #[test]
+    fn test_ticket_serialization_with_dates() {
+        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let start = Utc::now();
+        let end = start + chrono::Duration::days(7);
+        ticket.set_date_range(start, end).unwrap();
+
+        let json = serde_json::to_string(&ticket).unwrap();
+        let deserialized: Ticket = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.start_date, Some(start));
+        assert_eq!(deserialized.end_date, Some(end));
+    }
+
+    #[test]
+    fn test_ticket_serialization_without_dates() {
+        let ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let json = serde_json::to_string(&ticket).unwrap();
+
+        // Fields should be omitted due to skip_serializing_if
+        assert!(!json.contains("start_date"));
+        assert!(!json.contains("end_date"));
+    }
+
+    #[test]
+    fn test_backwards_compatibility_deserialization() {
+        let old_json = r#"{
+        "id": "HLA1",
+        "title": "Old Ticket",
+        "description": null,
+        "status": "new",
+        "acceptance_criteria": [],
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "agent_assigned": false,
+        "rejection_reason": null
+    }"#;
+
+        let ticket: Ticket = serde_json::from_str(old_json).unwrap();
+        assert_eq!(ticket.id.as_str(), "HLA1");
+        assert!(ticket.start_date.is_none());
+        assert!(ticket.end_date.is_none());
     }
 }

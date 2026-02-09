@@ -189,4 +189,22 @@ mod tests {
         assert_eq!(loaded.id.as_str(), ticket.id.as_str());
         assert_eq!(loaded.title, ticket.title);
     }
+
+    #[tokio::test]
+    async fn test_ticket_with_dates_save_and_load() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = FileStorage::new(temp_dir.path());
+        storage.initialize().await.unwrap();
+
+        let mut ticket = Ticket::new(TicketId::new(1), "Test Ticket".to_string());
+        let start = chrono::Utc::now();
+        let end = start + chrono::Duration::days(7);
+
+        ticket.set_date_range(start, end).unwrap();
+        storage.save_ticket(&ticket).await.unwrap();
+
+        let loaded = storage.load_ticket(&ticket.id).await.unwrap();
+        assert_eq!(loaded.start_date, Some(start));
+        assert_eq!(loaded.end_date, Some(end));
+    }
 }

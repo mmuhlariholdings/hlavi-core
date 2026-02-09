@@ -31,6 +31,9 @@ pub enum HlaviError {
     #[error("Acceptance criteria not found")]
     AcceptanceCriteriaNotFound,
 
+    #[error("Invalid date range: start date {start} must be before or equal to end date {end}")]
+    InvalidDateRange { start: String, end: String },
+
     #[error("Project not initialized. Run 'hlavi init' first.")]
     ProjectNotInitialized,
 
