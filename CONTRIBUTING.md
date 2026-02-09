@@ -69,7 +69,7 @@ or with ticket ID:
 - `feature: add SQLite storage backend`
 - `fix(HLAVI-72): handle async errors in file operations`
 - `docs: update storage interface documentation`
-- `refactor: split ticket logic into separate modules`
+- `refactor: split task logic into separate modules`
 - `ci: add multi-platform build workflow`
 
 ### Notes:
