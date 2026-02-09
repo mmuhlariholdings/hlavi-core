@@ -1,4 +1,4 @@
-use crate::domain::ticket::{TicketId, TicketStatus};
+use crate::domain::task::{TaskId, TaskStatus};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -6,7 +6,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Column {
     pub name: String,
-    pub status: TicketStatus,
+    pub status: TaskStatus,
     pub agent_enabled: bool,
     pub agent_mode: Option<AgentMode>,
 }
@@ -20,7 +20,7 @@ pub enum AgentMode {
 }
 
 impl Column {
-    pub fn new(name: String, status: TicketStatus) -> Self {
+    pub fn new(name: String, status: TaskStatus) -> Self {
         Self {
             name,
             status,
@@ -48,14 +48,14 @@ impl Default for BoardConfig {
         Self {
             name: "Default Board".to_string(),
             columns: vec![
-                Column::new("New".to_string(), TicketStatus::New),
-                Column::new("Open".to_string(), TicketStatus::Open),
-                Column::new("In Progress".to_string(), TicketStatus::InProgress)
+                Column::new("New".to_string(), TaskStatus::New),
+                Column::new("Open".to_string(), TaskStatus::Open),
+                Column::new("In Progress".to_string(), TaskStatus::InProgress)
                     .with_agent(AgentMode::Unattended),
-                Column::new("Pending".to_string(), TicketStatus::Pending),
-                Column::new("Review".to_string(), TicketStatus::Review),
-                Column::new("Done".to_string(), TicketStatus::Done),
-                Column::new("Closed".to_string(), TicketStatus::Closed),
+                Column::new("Pending".to_string(), TaskStatus::Pending),
+                Column::new("Review".to_string(), TaskStatus::Review),
+                Column::new("Done".to_string(), TaskStatus::Done),
+                Column::new("Closed".to_string(), TaskStatus::Closed),
             ],
         }
     }
@@ -65,46 +65,46 @@ impl Default for BoardConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Board {
     pub config: BoardConfig,
-    pub tickets: HashMap<String, TicketId>,
-    pub next_ticket_number: u32,
+    pub tasks: HashMap<String, TaskId>,
+    pub next_task_number: u32,
 }
 
 impl Board {
     pub fn new(config: BoardConfig) -> Self {
         Self {
             config,
-            tickets: HashMap::new(),
-            next_ticket_number: 1,
+            tasks: HashMap::new(),
+            next_task_number: 1,
         }
     }
 
-    /// Generates the next ticket ID
-    pub fn next_ticket_id(&mut self) -> TicketId {
-        let id = TicketId::new(self.next_ticket_number);
-        self.next_ticket_number += 1;
+    /// Generates the next task ID
+    pub fn next_task_id(&mut self) -> TaskId {
+        let id = TaskId::new(self.next_task_number);
+        self.next_task_number += 1;
         id
     }
 
-    /// Adds a ticket to the board tracking
-    pub fn add_ticket(&mut self, ticket_id: TicketId) {
-        self.tickets
-            .insert(ticket_id.as_str().to_string(), ticket_id);
+    /// Adds a task to the board tracking
+    pub fn add_task(&mut self, task_id: TaskId) {
+        self.tasks
+            .insert(task_id.as_str().to_string(), task_id);
     }
 
     /// Gets the column configuration for a status
-    pub fn get_column_for_status(&self, status: &TicketStatus) -> Option<&Column> {
+    pub fn get_column_for_status(&self, status: &TaskStatus) -> Option<&Column> {
         self.config.columns.iter().find(|col| &col.status == status)
     }
 
     /// Checks if agent mode is enabled for a status
-    pub fn is_agent_enabled_for_status(&self, status: &TicketStatus) -> bool {
+    pub fn is_agent_enabled_for_status(&self, status: &TaskStatus) -> bool {
         self.get_column_for_status(status)
             .map(|col| col.agent_enabled)
             .unwrap_or(false)
     }
 
     /// Gets the agent mode for a status
-    pub fn get_agent_mode_for_status(&self, status: &TicketStatus) -> Option<AgentMode> {
+    pub fn get_agent_mode_for_status(&self, status: &TaskStatus) -> Option<AgentMode> {
         self.get_column_for_status(status)
             .and_then(|col| col.agent_mode.clone())
     }
@@ -123,18 +123,18 @@ mod tests {
     #[test]
     fn test_board_creation() {
         let board = Board::default();
-        assert_eq!(board.next_ticket_number, 1);
-        assert_eq!(board.tickets.len(), 0);
+        assert_eq!(board.next_task_number, 1);
+        assert_eq!(board.tasks.len(), 0);
     }
 
     #[test]
-    fn test_next_ticket_id() {
+    fn test_next_task_id() {
         let mut board = Board::default();
 
-        let id1 = board.next_ticket_id();
+        let id1 = board.next_task_id();
         assert_eq!(id1.as_str(), "HLA1");
 
-        let id2 = board.next_ticket_id();
+        let id2 = board.next_task_id();
         assert_eq!(id2.as_str(), "HLA2");
     }
 
@@ -142,10 +142,10 @@ mod tests {
     fn test_agent_configuration() {
         let board = Board::default();
 
-        assert!(board.is_agent_enabled_for_status(&TicketStatus::InProgress));
-        assert!(!board.is_agent_enabled_for_status(&TicketStatus::New));
+        assert!(board.is_agent_enabled_for_status(&TaskStatus::InProgress));
+        assert!(!board.is_agent_enabled_for_status(&TaskStatus::New));
 
-        let mode = board.get_agent_mode_for_status(&TicketStatus::InProgress);
+        let mode = board.get_agent_mode_for_status(&TaskStatus::InProgress);
         assert_eq!(mode, Some(AgentMode::Unattended));
     }
 }

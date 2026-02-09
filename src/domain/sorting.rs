@@ -1,9 +1,9 @@
-use crate::domain::ticket::{Ticket, TicketStatus};
+use crate::domain::task::{Task, TaskStatus};
 use chrono::{DateTime, Utc};
 use std::cmp::Ordering;
 use std::str::FromStr;
 
-/// Fields available for sorting tickets
+/// Fields available for sorting tasks
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SortField {
     Id,
@@ -61,31 +61,31 @@ impl FromStr for SortOrder {
     }
 }
 
-/// Main sorting function for tickets
+/// Main sorting function for tasks
 ///
-/// Sorts a vector of tickets in-place based on the specified field and order.
+/// Sorts a vector of tasks in-place based on the specified field and order.
 ///
 /// # Arguments
-/// * `tickets` - Mutable reference to the vector of tickets to sort
+/// * `tasks` - Mutable reference to the vector of tasks to sort
 /// * `field` - The field to sort by
 /// * `order` - The sort direction (ascending or descending)
 ///
 /// # Examples
 /// ```
-/// use hlavi_core::domain::sorting::{sort_tickets, SortField, SortOrder};
-/// use hlavi_core::domain::ticket::{Ticket, TicketId};
+/// use hlavi_core::domain::sorting::{sort_tasks, SortField, SortOrder};
+/// use hlavi_core::domain::task::{Task, TaskId};
 ///
-/// let mut tickets = vec![
-///     Ticket::new(TicketId::new(3), "C".to_string()),
-///     Ticket::new(TicketId::new(1), "A".to_string()),
-///     Ticket::new(TicketId::new(2), "B".to_string()),
+/// let mut tasks = vec![
+///     Task::new(TaskId::new(3), "C".to_string()),
+///     Task::new(TaskId::new(1), "A".to_string()),
+///     Task::new(TaskId::new(2), "B".to_string()),
 /// ];
 ///
-/// sort_tickets(&mut tickets, SortField::Id, SortOrder::Ascending);
-/// assert_eq!(tickets[0].id.as_str(), "HLA1");
+/// sort_tasks(&mut tasks, SortField::Id, SortOrder::Ascending);
+/// assert_eq!(tasks[0].id.as_str(), "HLA1");
 /// ```
-pub fn sort_tickets(tickets: &mut [Ticket], field: SortField, order: SortOrder) {
-    tickets.sort_by(|a, b| {
+pub fn sort_tasks(tasks: &mut [Task], field: SortField, order: SortOrder) {
+    tasks.sort_by(|a, b| {
         let cmp = match field {
             SortField::Id => a.id.as_str().cmp(b.id.as_str()),
             SortField::Title => a.title.to_lowercase().cmp(&b.title.to_lowercase()),
@@ -108,19 +108,19 @@ pub fn sort_tickets(tickets: &mut [Ticket], field: SortField, order: SortOrder) 
     });
 }
 
-/// Compare ticket status by logical workflow progression
+/// Compare task status by logical workflow progression
 ///
 /// Status order: New → Open → InProgress → Pending → Review → Done → Closed
-fn compare_status(a: &TicketStatus, b: &TicketStatus) -> Ordering {
-    fn status_order(s: &TicketStatus) -> u8 {
+fn compare_status(a: &TaskStatus, b: &TaskStatus) -> Ordering {
+    fn status_order(s: &TaskStatus) -> u8 {
         match s {
-            TicketStatus::New => 0,
-            TicketStatus::Open => 1,
-            TicketStatus::InProgress => 2,
-            TicketStatus::Pending => 3,
-            TicketStatus::Review => 4,
-            TicketStatus::Done => 5,
-            TicketStatus::Closed => 6,
+            TaskStatus::New => 0,
+            TaskStatus::Open => 1,
+            TaskStatus::InProgress => 2,
+            TaskStatus::Pending => 3,
+            TaskStatus::Review => 4,
+            TaskStatus::Done => 5,
+            TaskStatus::Closed => 6,
         }
     }
     status_order(a).cmp(&status_order(b))
@@ -128,8 +128,8 @@ fn compare_status(a: &TicketStatus, b: &TicketStatus) -> Ordering {
 
 /// Compare Option<DateTime> with None always sorting to end
 ///
-/// When sorting dates, tickets with dates (Some) always come before
-/// tickets without dates (None), regardless of sort order.
+/// When sorting dates, tasks with dates (Some) always come before
+/// tasks without dates (None), regardless of sort order.
 fn compare_option_dates(a: Option<DateTime<Utc>>, b: Option<DateTime<Utc>>) -> Ordering {
     match (a, b) {
         (Some(a_date), Some(b_date)) => a_date.cmp(&b_date),
@@ -141,10 +141,10 @@ fn compare_option_dates(a: Option<DateTime<Utc>>, b: Option<DateTime<Utc>>) -> O
 
 /// Compare by acceptance criteria completion percentage
 ///
-/// Calculates completion percentage as (completed / total) for each ticket.
-/// Tickets with no acceptance criteria are treated as 0% complete.
-fn compare_ac_progress(a: &Ticket, b: &Ticket) -> Ordering {
-    fn progress_pct(t: &Ticket) -> f64 {
+/// Calculates completion percentage as (completed / total) for each task.
+/// Tasks with no acceptance criteria are treated as 0% complete.
+fn compare_ac_progress(a: &Task, b: &Task) -> Ordering {
+    fn progress_pct(t: &Task) -> f64 {
         if t.acceptance_criteria.is_empty() {
             0.0
         } else {
@@ -165,90 +165,90 @@ fn compare_ac_progress(a: &Ticket, b: &Ticket) -> Ordering {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::ticket::TicketId;
+    use crate::domain::task::TaskId;
 
     #[test]
-    fn test_sort_tickets_by_id_ascending() {
-        let mut tickets = vec![
-            Ticket::new(TicketId::new(3), "C".to_string()),
-            Ticket::new(TicketId::new(1), "A".to_string()),
-            Ticket::new(TicketId::new(2), "B".to_string()),
+    fn test_sort_tasks_by_id_ascending() {
+        let mut tasks = vec![
+            Task::new(TaskId::new(3), "C".to_string()),
+            Task::new(TaskId::new(1), "A".to_string()),
+            Task::new(TaskId::new(2), "B".to_string()),
         ];
 
-        sort_tickets(&mut tickets, SortField::Id, SortOrder::Ascending);
+        sort_tasks(&mut tasks, SortField::Id, SortOrder::Ascending);
 
-        assert_eq!(tickets[0].id.as_str(), "HLA1");
-        assert_eq!(tickets[1].id.as_str(), "HLA2");
-        assert_eq!(tickets[2].id.as_str(), "HLA3");
+        assert_eq!(tasks[0].id.as_str(), "HLA1");
+        assert_eq!(tasks[1].id.as_str(), "HLA2");
+        assert_eq!(tasks[2].id.as_str(), "HLA3");
     }
 
     #[test]
-    fn test_sort_tickets_by_id_descending() {
-        let mut tickets = vec![
-            Ticket::new(TicketId::new(1), "A".to_string()),
-            Ticket::new(TicketId::new(2), "B".to_string()),
-            Ticket::new(TicketId::new(3), "C".to_string()),
+    fn test_sort_tasks_by_id_descending() {
+        let mut tasks = vec![
+            Task::new(TaskId::new(1), "A".to_string()),
+            Task::new(TaskId::new(2), "B".to_string()),
+            Task::new(TaskId::new(3), "C".to_string()),
         ];
 
-        sort_tickets(&mut tickets, SortField::Id, SortOrder::Descending);
+        sort_tasks(&mut tasks, SortField::Id, SortOrder::Descending);
 
-        assert_eq!(tickets[0].id.as_str(), "HLA3");
-        assert_eq!(tickets[1].id.as_str(), "HLA2");
-        assert_eq!(tickets[2].id.as_str(), "HLA1");
+        assert_eq!(tasks[0].id.as_str(), "HLA3");
+        assert_eq!(tasks[1].id.as_str(), "HLA2");
+        assert_eq!(tasks[2].id.as_str(), "HLA1");
     }
 
     #[test]
-    fn test_sort_tickets_by_title() {
-        let mut tickets = vec![
-            Ticket::new(TicketId::new(1), "Charlie".to_string()),
-            Ticket::new(TicketId::new(2), "Alpha".to_string()),
-            Ticket::new(TicketId::new(3), "Bravo".to_string()),
+    fn test_sort_tasks_by_title() {
+        let mut tasks = vec![
+            Task::new(TaskId::new(1), "Charlie".to_string()),
+            Task::new(TaskId::new(2), "Alpha".to_string()),
+            Task::new(TaskId::new(3), "Bravo".to_string()),
         ];
 
-        sort_tickets(&mut tickets, SortField::Title, SortOrder::Ascending);
+        sort_tasks(&mut tasks, SortField::Title, SortOrder::Ascending);
 
-        assert_eq!(tickets[0].title, "Alpha");
-        assert_eq!(tickets[1].title, "Bravo");
-        assert_eq!(tickets[2].title, "Charlie");
+        assert_eq!(tasks[0].title, "Alpha");
+        assert_eq!(tasks[1].title, "Bravo");
+        assert_eq!(tasks[2].title, "Charlie");
     }
 
     #[test]
-    fn test_sort_tickets_by_title_descending() {
-        let mut tickets = vec![
-            Ticket::new(TicketId::new(1), "Alpha".to_string()),
-            Ticket::new(TicketId::new(2), "Charlie".to_string()),
-            Ticket::new(TicketId::new(3), "Bravo".to_string()),
+    fn test_sort_tasks_by_title_descending() {
+        let mut tasks = vec![
+            Task::new(TaskId::new(1), "Alpha".to_string()),
+            Task::new(TaskId::new(2), "Charlie".to_string()),
+            Task::new(TaskId::new(3), "Bravo".to_string()),
         ];
 
-        sort_tickets(&mut tickets, SortField::Title, SortOrder::Descending);
+        sort_tasks(&mut tasks, SortField::Title, SortOrder::Descending);
 
-        assert_eq!(tickets[0].title, "Charlie");
-        assert_eq!(tickets[1].title, "Bravo");
-        assert_eq!(tickets[2].title, "Alpha");
+        assert_eq!(tasks[0].title, "Charlie");
+        assert_eq!(tasks[1].title, "Bravo");
+        assert_eq!(tasks[2].title, "Alpha");
     }
 
     #[test]
-    fn test_sort_tickets_by_title_case_insensitive() {
-        let mut tickets = vec![
-            Ticket::new(TicketId::new(1), "zebra".to_string()),
-            Ticket::new(TicketId::new(2), "Apple".to_string()),
-            Ticket::new(TicketId::new(3), "BANANA".to_string()),
+    fn test_sort_tasks_by_title_case_insensitive() {
+        let mut tasks = vec![
+            Task::new(TaskId::new(1), "zebra".to_string()),
+            Task::new(TaskId::new(2), "Apple".to_string()),
+            Task::new(TaskId::new(3), "BANANA".to_string()),
         ];
 
-        sort_tickets(&mut tickets, SortField::Title, SortOrder::Ascending);
+        sort_tasks(&mut tasks, SortField::Title, SortOrder::Ascending);
 
-        assert_eq!(tickets[0].title, "Apple");
-        assert_eq!(tickets[1].title, "BANANA");
-        assert_eq!(tickets[2].title, "zebra");
+        assert_eq!(tasks[0].title, "Apple");
+        assert_eq!(tasks[1].title, "BANANA");
+        assert_eq!(tasks[2].title, "zebra");
     }
 
     #[test]
     fn test_compare_status_ordering() {
-        let new = TicketStatus::New;
-        let open = TicketStatus::Open;
-        let in_progress = TicketStatus::InProgress;
-        let done = TicketStatus::Done;
-        let closed = TicketStatus::Closed;
+        let new = TaskStatus::New;
+        let open = TaskStatus::Open;
+        let in_progress = TaskStatus::InProgress;
+        let done = TaskStatus::Done;
+        let closed = TaskStatus::Closed;
 
         assert_eq!(compare_status(&new, &open), Ordering::Less);
         assert_eq!(compare_status(&open, &in_progress), Ordering::Less);
@@ -279,70 +279,70 @@ mod tests {
 
     #[test]
     fn test_compare_ac_progress() {
-        let mut ticket1 = Ticket::new(TicketId::new(1), "Ticket 1".to_string());
-        let mut ticket2 = Ticket::new(TicketId::new(2), "Ticket 2".to_string());
-        let ticket3 = Ticket::new(TicketId::new(3), "Ticket 3".to_string());
+        let mut task1 = Task::new(TaskId::new(1), "Task 1".to_string());
+        let mut task2 = Task::new(TaskId::new(2), "Task 2".to_string());
+        let task3 = Task::new(TaskId::new(3), "Task 3".to_string());
 
-        // ticket1: 50% (1/2)
-        ticket1.add_acceptance_criterion("AC1".to_string());
-        ticket1.add_acceptance_criterion("AC2".to_string());
-        ticket1.acceptance_criteria[0].mark_completed();
+        // task1: 50% (1/2)
+        task1.add_acceptance_criterion("AC1".to_string());
+        task1.add_acceptance_criterion("AC2".to_string());
+        task1.acceptance_criteria[0].mark_completed();
 
-        // ticket2: 100% (1/1)
-        ticket2.add_acceptance_criterion("AC1".to_string());
-        ticket2.acceptance_criteria[0].mark_completed();
+        // task2: 100% (1/1)
+        task2.add_acceptance_criterion("AC1".to_string());
+        task2.acceptance_criteria[0].mark_completed();
 
-        // ticket3: 0% (no ACs)
+        // task3: 0% (no ACs)
 
-        assert_eq!(compare_ac_progress(&ticket3, &ticket1), Ordering::Less);
-        assert_eq!(compare_ac_progress(&ticket1, &ticket2), Ordering::Less);
-        assert_eq!(compare_ac_progress(&ticket2, &ticket1), Ordering::Greater);
+        assert_eq!(compare_ac_progress(&task3, &task1), Ordering::Less);
+        assert_eq!(compare_ac_progress(&task1, &task2), Ordering::Less);
+        assert_eq!(compare_ac_progress(&task2, &task1), Ordering::Greater);
     }
 
     #[test]
     fn test_sort_by_ac_count() {
-        let mut ticket1 = Ticket::new(TicketId::new(1), "Ticket 1".to_string());
-        let mut ticket2 = Ticket::new(TicketId::new(2), "Ticket 2".to_string());
-        let ticket3 = Ticket::new(TicketId::new(3), "Ticket 3".to_string());
+        let mut task1 = Task::new(TaskId::new(1), "Task 1".to_string());
+        let mut task2 = Task::new(TaskId::new(2), "Task 2".to_string());
+        let task3 = Task::new(TaskId::new(3), "Task 3".to_string());
 
-        ticket1.add_acceptance_criterion("AC1".to_string());
-        ticket1.add_acceptance_criterion("AC2".to_string());
-        ticket1.add_acceptance_criterion("AC3".to_string());
+        task1.add_acceptance_criterion("AC1".to_string());
+        task1.add_acceptance_criterion("AC2".to_string());
+        task1.add_acceptance_criterion("AC3".to_string());
 
-        ticket2.add_acceptance_criterion("AC1".to_string());
+        task2.add_acceptance_criterion("AC1".to_string());
 
-        let mut tickets = vec![ticket1, ticket2, ticket3];
+        let mut tasks = vec![task1, task2, task3];
 
-        sort_tickets(&mut tickets, SortField::AcCount, SortOrder::Ascending);
+        sort_tasks(&mut tasks, SortField::AcCount, SortOrder::Ascending);
 
-        assert_eq!(tickets[0].acceptance_criteria.len(), 0);
-        assert_eq!(tickets[1].acceptance_criteria.len(), 1);
-        assert_eq!(tickets[2].acceptance_criteria.len(), 3);
+        assert_eq!(tasks[0].acceptance_criteria.len(), 0);
+        assert_eq!(tasks[1].acceptance_criteria.len(), 1);
+        assert_eq!(tasks[2].acceptance_criteria.len(), 3);
     }
 
     #[test]
     fn test_sort_by_dates_with_none_values() {
-        let mut ticket1 = Ticket::new(TicketId::new(1), "Has both dates".to_string());
-        let mut ticket2 = Ticket::new(TicketId::new(2), "Has start only".to_string());
-        let ticket3 = Ticket::new(TicketId::new(3), "Has no dates".to_string());
+        let mut task1 = Task::new(TaskId::new(1), "Has both dates".to_string());
+        let mut task2 = Task::new(TaskId::new(2), "Has start only".to_string());
+        let task3 = Task::new(TaskId::new(3), "Has no dates".to_string());
 
         let early_date = Utc::now();
         let later_date = early_date + chrono::Duration::days(5);
 
-        ticket1
+        task1
             .set_date_range(early_date, later_date)
             .expect("Failed to set dates");
-        ticket2
+        task2
             .set_start_date(later_date)
             .expect("Failed to set start date");
 
-        let mut tickets = vec![ticket3.clone(), ticket2.clone(), ticket1.clone()];
+        let mut tasks = vec![task3.clone(), task2.clone(), task1.clone()];
 
-        sort_tickets(&mut tickets, SortField::Start, SortOrder::Ascending);
+        sort_tasks(&mut tasks, SortField::Start, SortOrder::Ascending);
 
-        // Tickets with dates should come before tickets without dates
-        assert!(tickets[0].start_date.is_some());
-        assert!(tickets[1].start_date.is_some());
-        assert!(tickets[2].start_date.is_none());
+        // Tasks with dates should come before tasks without dates
+        assert!(tasks[0].start_date.is_some());
+        assert!(tasks[1].start_date.is_some());
+        assert!(tasks[2].start_date.is_none());
     }
 }

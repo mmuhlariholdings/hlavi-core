@@ -1,5 +1,5 @@
 use crate::{
-    domain::{Board, Ticket, TicketId},
+    domain::{Board, Task, TaskId},
     error::Result,
 };
 use async_trait::async_trait;
@@ -9,27 +9,27 @@ pub mod file_storage;
 #[cfg(feature = "sqlite-storage")]
 pub mod sqlite_storage;
 
-/// Storage trait for persisting tickets and board state
+/// Storage trait for persisting tasks and board state
 #[async_trait]
 pub trait Storage: Send + Sync {
     /// Initializes the storage backend
     async fn initialize(&self) -> Result<()>;
 
-    /// Saves a ticket
-    async fn save_ticket(&self, ticket: &Ticket) -> Result<()>;
+    /// Saves a task
+    async fn save_task(&self, task: &Task) -> Result<()>;
 
-    /// Loads a ticket by ID
-    async fn load_ticket(&self, id: &TicketId) -> Result<Ticket>;
+    /// Loads a task by ID
+    async fn load_task(&self, id: &TaskId) -> Result<Task>;
 
-    /// Lists all ticket IDs
-    async fn list_ticket_ids(&self) -> Result<Vec<TicketId>>;
+    /// Lists all task IDs
+    async fn list_task_ids(&self) -> Result<Vec<TaskId>>;
 
-    /// Searches for tickets matching the query in title, description, or acceptance criteria
-    /// Returns a vector of tickets that match the query (case-insensitive)
-    async fn search_tickets(&self, query: &str) -> Result<Vec<Ticket>>;
+    /// Searches for tasks matching the query in title, description, or acceptance criteria
+    /// Returns a vector of tasks that match the query (case-insensitive)
+    async fn search_tasks(&self, query: &str) -> Result<Vec<Task>>;
 
-    /// Deletes a ticket
-    async fn delete_ticket(&self, id: &TicketId) -> Result<()>;
+    /// Deletes a task
+    async fn delete_task(&self, id: &TaskId) -> Result<()>;
 
     /// Saves the board state
     async fn save_board(&self, board: &Board) -> Result<()>;

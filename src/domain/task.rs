@@ -2,15 +2,15 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::{fmt, str::FromStr};
 
-/// Unique identifier for a ticket (e.g., HLA1, HLA2, HLA100)
+/// Unique identifier for a task (e.g., HLA1, HLA2, HLA100)
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct TicketId(String);
+pub struct TaskId(String);
 
-impl TicketId {
-    // Default prefix for ticket IDs (could be made configurable in the future)
+impl TaskId {
+    // Default prefix for task IDs (could be made configurable in the future)
     const DEFAULT_PREFIX: &'static str = "HLA";
 
-    /// Creates a new TicketId from a counter
+    /// Creates a new TaskId from a counter
     pub fn new(counter: u32) -> Self {
         Self(format!("{}{}", Self::DEFAULT_PREFIX, counter))
     }
@@ -21,13 +21,13 @@ impl TicketId {
     }
 }
 
-impl FromStr for TicketId {
+impl FromStr for TaskId {
     type Err = crate::error::HlaviError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // Convert to uppercase for case-insensitive comparison
         let normalized = s.to_uppercase();
-        let prefix = TicketId::DEFAULT_PREFIX;
+        let prefix = TaskId::DEFAULT_PREFIX;
 
         if normalized.starts_with(prefix) && normalized.len() > prefix.len() {
             // Verify the rest is a valid number
@@ -35,24 +35,24 @@ impl FromStr for TicketId {
                 // Store the normalized (uppercase) form
                 Ok(Self(normalized))
             } else {
-                Err(crate::error::HlaviError::InvalidTicketId(s.to_string()))
+                Err(crate::error::HlaviError::InvalidTaskId(s.to_string()))
             }
         } else {
-            Err(crate::error::HlaviError::InvalidTicketId(s.to_string()))
+            Err(crate::error::HlaviError::InvalidTaskId(s.to_string()))
         }
     }
 }
 
-impl fmt::Display for TicketId {
+impl fmt::Display for TaskId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-/// Status of a ticket on the kanban board
+/// Status of a task on the kanban board
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum TicketStatus {
+pub enum TaskStatus {
     New,
     Open,
     InProgress,
@@ -62,7 +62,7 @@ pub enum TicketStatus {
     Closed,
 }
 
-impl fmt::Display for TicketStatus {
+impl fmt::Display for TaskStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::New => write!(f, "New"),
@@ -76,9 +76,9 @@ impl fmt::Display for TicketStatus {
     }
 }
 
-impl TicketStatus {
+impl TaskStatus {
     /// Checks if a status transition is valid
-    pub fn can_transition_to(&self, target: &TicketStatus) -> bool {
+    pub fn can_transition_to(&self, target: &TaskStatus) -> bool {
         match (self, target) {
             // From New
             (Self::New, Self::Open) => true,
@@ -112,7 +112,7 @@ impl TicketStatus {
     }
 }
 
-/// Acceptance criteria for a ticket
+/// Acceptance criteria for a task
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AcceptanceCriteria {
     pub id: usize,
@@ -152,13 +152,13 @@ impl AcceptanceCriteria {
     }
 }
 
-/// A kanban ticket
+/// A kanban task
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Ticket {
-    pub id: TicketId,
+pub struct Task {
+    pub id: TaskId,
     pub title: String,
     pub description: Option<String>,
-    pub status: TicketStatus,
+    pub status: TaskStatus,
     pub acceptance_criteria: Vec<AcceptanceCriteria>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -170,15 +170,15 @@ pub struct Ticket {
     pub end_date: Option<DateTime<Utc>>,
 }
 
-impl Ticket {
-    /// Creates a new ticket with the given ID and title
-    pub fn new(id: TicketId, title: String) -> Self {
+impl Task {
+    /// Creates a new task with the given ID and title
+    pub fn new(id: TaskId, title: String) -> Self {
         let now = Utc::now();
         Self {
             id,
             title,
             description: None,
-            status: TicketStatus::New,
+            status: TaskStatus::New,
             acceptance_criteria: Vec::new(),
             created_at: now,
             updated_at: now,
@@ -297,10 +297,10 @@ impl Ticket {
         Err(crate::error::HlaviError::AcceptanceCriteriaNotFound)
     }
 
-    /// Changes the ticket status
+    /// Changes the task status
     pub fn transition_to(
         &mut self,
-        new_status: TicketStatus,
+        new_status: TaskStatus,
         rejection_reason: Option<String>,
     ) -> Result<(), crate::error::HlaviError> {
         if !self.status.can_transition_to(&new_status) {
@@ -322,9 +322,9 @@ impl Ticket {
             && self.acceptance_criteria.iter().all(|ac| ac.completed)
     }
 
-    /// Checks if the ticket can be marked as done
+    /// Checks if the task can be marked as done
     pub fn can_mark_done(&self) -> bool {
-        self.status == TicketStatus::Review && self.all_acceptance_criteria_completed()
+        self.status == TaskStatus::Review && self.all_acceptance_criteria_completed()
     }
 }
 
@@ -333,76 +333,76 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_ticket_id_creation() {
-        let id = TicketId::new(1);
+    fn test_task_id_creation() {
+        let id = TaskId::new(1);
         assert_eq!(id.as_str(), "HLA1");
 
-        let id = TicketId::new(42);
+        let id = TaskId::new(42);
         assert_eq!(id.as_str(), "HLA42");
 
-        let id = TicketId::new(1000);
+        let id = TaskId::new(1000);
         assert_eq!(id.as_str(), "HLA1000");
     }
 
     #[test]
-    fn test_ticket_id_parsing() {
-        let id = TicketId::from_str("HLA1").unwrap();
+    fn test_task_id_parsing() {
+        let id = TaskId::from_str("HLA1").unwrap();
         assert_eq!(id.as_str(), "HLA1");
 
-        let id = TicketId::from_str("HLA123").unwrap();
+        let id = TaskId::from_str("HLA123").unwrap();
         assert_eq!(id.as_str(), "HLA123");
 
-        assert!(TicketId::from_str("INVALID").is_err());
-        assert!(TicketId::from_str("HLA").is_err());
-        assert!(TicketId::from_str("HLAabc").is_err());
+        assert!(TaskId::from_str("INVALID").is_err());
+        assert!(TaskId::from_str("HLA").is_err());
+        assert!(TaskId::from_str("HLAabc").is_err());
     }
 
     #[test]
-    fn test_ticket_id_parsing_case_insensitive() {
+    fn test_task_id_parsing_case_insensitive() {
         // Lowercase
-        let id = TicketId::from_str("hla1").unwrap();
+        let id = TaskId::from_str("hla1").unwrap();
         assert_eq!(id.as_str(), "HLA1");
 
-        let id = TicketId::from_str("hla42").unwrap();
+        let id = TaskId::from_str("hla42").unwrap();
         assert_eq!(id.as_str(), "HLA42");
 
         // Mixed case
-        let id = TicketId::from_str("Hla123").unwrap();
+        let id = TaskId::from_str("Hla123").unwrap();
         assert_eq!(id.as_str(), "HLA123");
 
-        let id = TicketId::from_str("HlA99").unwrap();
+        let id = TaskId::from_str("HlA99").unwrap();
         assert_eq!(id.as_str(), "HLA99");
 
-        let id = TicketId::from_str("hLa5").unwrap();
+        let id = TaskId::from_str("hLa5").unwrap();
         assert_eq!(id.as_str(), "HLA5");
 
         // All variations should normalize to uppercase
         assert_eq!(
-            TicketId::from_str("hla1").unwrap(),
-            TicketId::from_str("HLA1").unwrap()
+            TaskId::from_str("hla1").unwrap(),
+            TaskId::from_str("HLA1").unwrap()
         );
         assert_eq!(
-            TicketId::from_str("Hla1").unwrap(),
-            TicketId::from_str("HLA1").unwrap()
+            TaskId::from_str("Hla1").unwrap(),
+            TaskId::from_str("HLA1").unwrap()
         );
     }
 
     #[test]
     fn test_status_transitions() {
-        assert!(TicketStatus::New.can_transition_to(&TicketStatus::Open));
-        assert!(TicketStatus::Open.can_transition_to(&TicketStatus::InProgress));
-        assert!(!TicketStatus::New.can_transition_to(&TicketStatus::Done));
+        assert!(TaskStatus::New.can_transition_to(&TaskStatus::Open));
+        assert!(TaskStatus::Open.can_transition_to(&TaskStatus::InProgress));
+        assert!(!TaskStatus::New.can_transition_to(&TaskStatus::Done));
     }
 
     #[test]
-    fn test_ticket_acceptance_criteria() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+    fn test_task_acceptance_criteria() {
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
 
-        ticket.add_acceptance_criterion("AC 1".to_string());
-        ticket.add_acceptance_criterion("AC 2".to_string());
+        task.add_acceptance_criterion("AC 1".to_string());
+        task.add_acceptance_criterion("AC 2".to_string());
 
-        assert_eq!(ticket.acceptance_criteria.len(), 2);
-        assert!(!ticket.all_acceptance_criteria_completed());
+        assert_eq!(task.acceptance_criteria.len(), 2);
+        assert!(!task.all_acceptance_criteria_completed());
     }
 
     #[test]
@@ -454,153 +454,153 @@ mod tests {
     }
 
     #[test]
-    fn test_ticket_all_acceptance_criteria_completed() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+    fn test_task_all_acceptance_criteria_completed() {
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
 
         // No criteria - should return false
-        assert!(!ticket.all_acceptance_criteria_completed());
+        assert!(!task.all_acceptance_criteria_completed());
 
         // Add criteria
-        ticket.add_acceptance_criterion("AC 1".to_string());
-        ticket.add_acceptance_criterion("AC 2".to_string());
+        task.add_acceptance_criterion("AC 1".to_string());
+        task.add_acceptance_criterion("AC 2".to_string());
 
         // None completed
-        assert!(!ticket.all_acceptance_criteria_completed());
+        assert!(!task.all_acceptance_criteria_completed());
 
         // Complete one
-        ticket.acceptance_criteria[0].mark_completed();
-        assert!(!ticket.all_acceptance_criteria_completed());
+        task.acceptance_criteria[0].mark_completed();
+        assert!(!task.all_acceptance_criteria_completed());
 
         // Complete all
-        ticket.acceptance_criteria[1].mark_completed();
-        assert!(ticket.all_acceptance_criteria_completed());
+        task.acceptance_criteria[1].mark_completed();
+        assert!(task.all_acceptance_criteria_completed());
     }
 
     #[test]
     fn test_set_title() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Original Title".to_string());
-        assert_eq!(ticket.title, "Original Title");
+        let mut task = Task::new(TaskId::new(1), "Original Title".to_string());
+        assert_eq!(task.title, "Original Title");
 
-        ticket.set_title("Updated Title".to_string());
-        assert_eq!(ticket.title, "Updated Title");
+        task.set_title("Updated Title".to_string());
+        assert_eq!(task.title, "Updated Title");
     }
 
     #[test]
     fn test_set_title_updates_updated_at() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
-        let initial_updated_at = ticket.updated_at;
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
+        let initial_updated_at = task.updated_at;
 
         std::thread::sleep(std::time::Duration::from_millis(10));
-        ticket.set_title("New Title".to_string());
+        task.set_title("New Title".to_string());
 
-        assert!(ticket.updated_at > initial_updated_at);
+        assert!(task.updated_at > initial_updated_at);
     }
 
     #[test]
     fn test_set_start_date() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
         let start = Utc::now();
-        assert!(ticket.set_start_date(start).is_ok());
-        assert_eq!(ticket.start_date, Some(start));
+        assert!(task.set_start_date(start).is_ok());
+        assert_eq!(task.start_date, Some(start));
     }
 
     #[test]
     fn test_set_end_date() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
         let end = Utc::now();
-        assert!(ticket.set_end_date(end).is_ok());
-        assert_eq!(ticket.end_date, Some(end));
+        assert!(task.set_end_date(end).is_ok());
+        assert_eq!(task.end_date, Some(end));
     }
 
     #[test]
     fn test_set_date_range_valid() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
         let start = Utc::now();
         let end = start + chrono::Duration::days(7);
-        assert!(ticket.set_date_range(start, end).is_ok());
-        assert_eq!(ticket.start_date, Some(start));
-        assert_eq!(ticket.end_date, Some(end));
+        assert!(task.set_date_range(start, end).is_ok());
+        assert_eq!(task.start_date, Some(start));
+        assert_eq!(task.end_date, Some(end));
     }
 
     #[test]
     fn test_set_date_range_invalid() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
         let start = Utc::now();
         let end = start - chrono::Duration::days(1);
-        assert!(ticket.set_date_range(start, end).is_err());
+        assert!(task.set_date_range(start, end).is_err());
     }
 
     #[test]
     fn test_set_start_date_validates_against_existing_end() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
         let end = Utc::now();
         let invalid_start = end + chrono::Duration::days(1);
-        ticket.set_end_date(end).unwrap();
-        assert!(ticket.set_start_date(invalid_start).is_err());
+        task.set_end_date(end).unwrap();
+        assert!(task.set_start_date(invalid_start).is_err());
     }
 
     #[test]
     fn test_set_end_date_validates_against_existing_start() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
         let start = Utc::now();
         let invalid_end = start - chrono::Duration::days(1);
-        ticket.set_start_date(start).unwrap();
-        assert!(ticket.set_end_date(invalid_end).is_err());
+        task.set_start_date(start).unwrap();
+        assert!(task.set_end_date(invalid_end).is_err());
     }
 
     #[test]
     fn test_set_start_date_same_as_end_date() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
         let date = Utc::now();
-        ticket.set_end_date(date).unwrap();
-        assert!(ticket.set_start_date(date).is_ok());
+        task.set_end_date(date).unwrap();
+        assert!(task.set_start_date(date).is_ok());
     }
 
     #[test]
     fn test_clear_dates() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
         let start = Utc::now();
         let end = start + chrono::Duration::days(7);
 
-        ticket.set_date_range(start, end).unwrap();
-        assert!(ticket.start_date.is_some());
-        assert!(ticket.end_date.is_some());
+        task.set_date_range(start, end).unwrap();
+        assert!(task.start_date.is_some());
+        assert!(task.end_date.is_some());
 
-        ticket.clear_start_date();
-        assert!(ticket.start_date.is_none());
+        task.clear_start_date();
+        assert!(task.start_date.is_none());
 
-        ticket.clear_end_date();
-        assert!(ticket.end_date.is_none());
+        task.clear_end_date();
+        assert!(task.end_date.is_none());
     }
 
     #[test]
     fn test_date_setters_update_updated_at() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
-        let initial_updated_at = ticket.updated_at;
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
+        let initial_updated_at = task.updated_at;
 
         std::thread::sleep(std::time::Duration::from_millis(10));
-        ticket.set_start_date(Utc::now()).unwrap();
-        assert!(ticket.updated_at > initial_updated_at);
+        task.set_start_date(Utc::now()).unwrap();
+        assert!(task.updated_at > initial_updated_at);
     }
 
     #[test]
-    fn test_ticket_serialization_with_dates() {
-        let mut ticket = Ticket::new(TicketId::new(1), "Test".to_string());
+    fn test_task_serialization_with_dates() {
+        let mut task = Task::new(TaskId::new(1), "Test".to_string());
         let start = Utc::now();
         let end = start + chrono::Duration::days(7);
-        ticket.set_date_range(start, end).unwrap();
+        task.set_date_range(start, end).unwrap();
 
-        let json = serde_json::to_string(&ticket).unwrap();
-        let deserialized: Ticket = serde_json::from_str(&json).unwrap();
+        let json = serde_json::to_string(&task).unwrap();
+        let deserialized: Task = serde_json::from_str(&json).unwrap();
 
         assert_eq!(deserialized.start_date, Some(start));
         assert_eq!(deserialized.end_date, Some(end));
     }
 
     #[test]
-    fn test_ticket_serialization_without_dates() {
-        let ticket = Ticket::new(TicketId::new(1), "Test".to_string());
-        let json = serde_json::to_string(&ticket).unwrap();
+    fn test_task_serialization_without_dates() {
+        let task = Task::new(TaskId::new(1), "Test".to_string());
+        let json = serde_json::to_string(&task).unwrap();
 
         // Fields should be omitted due to skip_serializing_if
         assert!(!json.contains("start_date"));
@@ -611,7 +611,7 @@ mod tests {
     fn test_backwards_compatibility_deserialization() {
         let old_json = r#"{
         "id": "HLA1",
-        "title": "Old Ticket",
+        "title": "Old Task",
         "description": null,
         "status": "new",
         "acceptance_criteria": [],
@@ -621,9 +621,9 @@ mod tests {
         "rejection_reason": null
     }"#;
 
-        let ticket: Ticket = serde_json::from_str(old_json).unwrap();
-        assert_eq!(ticket.id.as_str(), "HLA1");
-        assert!(ticket.start_date.is_none());
-        assert!(ticket.end_date.is_none());
+        let task: Task = serde_json::from_str(old_json).unwrap();
+        assert_eq!(task.id.as_str(), "HLA1");
+        assert!(task.start_date.is_none());
+        assert!(task.end_date.is_none());
     }
 }

@@ -4,17 +4,17 @@ pub type Result<T> = std::result::Result<T, HlaviError>;
 
 #[derive(Debug, Error)]
 pub enum HlaviError {
-    #[error("Ticket not found: {0}")]
-    TicketNotFound(String),
+    #[error("Task not found: {0}")]
+    TaskNotFound(String),
 
     #[error("Board not initialized")]
     BoardNotInitialized,
 
-    #[error("Invalid ticket status transition from {from} to {to}")]
+    #[error("Invalid task status transition from {from} to {to}")]
     InvalidStatusTransition { from: String, to: String },
 
-    #[error("Invalid ticket ID format: {0}")]
-    InvalidTicketId(String),
+    #[error("Invalid task ID format: {0}")]
+    InvalidTaskId(String),
 
     #[error("Storage error: {0}")]
     StorageError(String),

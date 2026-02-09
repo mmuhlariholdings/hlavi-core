@@ -1,7 +1,7 @@
 pub mod board;
 pub mod sorting;
-pub mod ticket;
+pub mod task;
 
 pub use board::{Board, BoardConfig, Column};
-pub use sorting::{sort_tickets, SortField, SortOrder};
-pub use ticket::{AcceptanceCriteria, Ticket, TicketId, TicketStatus};
+pub use sorting::{sort_tasks, SortField, SortOrder};
+pub use task::{AcceptanceCriteria, Task, TaskId, TaskStatus};
