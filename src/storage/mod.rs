@@ -24,6 +24,10 @@ pub trait Storage: Send + Sync {
     /// Lists all ticket IDs
     async fn list_ticket_ids(&self) -> Result<Vec<TicketId>>;
 
+    /// Searches for tickets matching the query in title, description, or acceptance criteria
+    /// Returns a vector of tickets that match the query (case-insensitive)
+    async fn search_tickets(&self, query: &str) -> Result<Vec<Ticket>>;
+
     /// Deletes a ticket
     async fn delete_ticket(&self, id: &TicketId) -> Result<()>;
 
