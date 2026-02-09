@@ -13,6 +13,7 @@ pub mod storage;
 // Re-export commonly used types
 pub use domain::{
     board::{Board, BoardConfig, Column},
+    sorting::{sort_tickets, SortField, SortOrder},
     ticket::{AcceptanceCriteria, Ticket, TicketId, TicketStatus},
 };
 pub use error::{HlaviError, Result};
