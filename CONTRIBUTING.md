@@ -138,7 +138,7 @@ hlavi-core = { git = "https://github.com/mmuhlariholdings/hlavi-core", branch = 
 Or with specific tag:
 
 ```toml
-hlavi-core = { git = "https://github.com/mmuhlariholdings/hlavi-core", tag = "v0.1.0" }
+hlavi-core = { git = "https://github.com/mmuhlariholdings/hlavi-core", tag = "v0.1.9" }
 ```
 
 ### Versioning Guidelines
