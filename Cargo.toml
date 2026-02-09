@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["M Muhlari Holdings (Pty) Ltd"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/mmuhlariholdings/hlavi-core"
-homepage = "https://hlavi.com"
+homepage = "https://hlavi.mmuhlariholdings.co.za"
 description = "Core business logic and domain models for Hlavi kanban task management"
 rust-version = "1.75"
 
