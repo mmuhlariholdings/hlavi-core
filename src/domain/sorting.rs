@@ -133,7 +133,7 @@ fn compare_status(a: &TicketStatus, b: &TicketStatus) -> Ordering {
 fn compare_option_dates(a: Option<DateTime<Utc>>, b: Option<DateTime<Utc>>) -> Ordering {
     match (a, b) {
         (Some(a_date), Some(b_date)) => a_date.cmp(&b_date),
-        (Some(_), None) => Ordering::Less,    // Some comes before None
+        (Some(_), None) => Ordering::Less, // Some comes before None
         (None, Some(_)) => Ordering::Greater, // None comes after Some
         (None, None) => Ordering::Equal,
     }
