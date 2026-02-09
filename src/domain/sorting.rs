@@ -84,7 +84,7 @@ impl FromStr for SortOrder {
 /// sort_tickets(&mut tickets, SortField::Id, SortOrder::Ascending);
 /// assert_eq!(tickets[0].id.as_str(), "HLA1");
 /// ```
-pub fn sort_tickets(tickets: &mut Vec<Ticket>, field: SortField, order: SortOrder) {
+pub fn sort_tickets(tickets: &mut [Ticket], field: SortField, order: SortOrder) {
     tickets.sort_by(|a, b| {
         let cmp = match field {
             SortField::Id => a.id.as_str().cmp(b.id.as_str()),
