@@ -2,9 +2,6 @@
 /target/
 Cargo.lock
 
-# Hlavi
-.hlavi/
-
 # IDE
 .idea/
 .vscode/
