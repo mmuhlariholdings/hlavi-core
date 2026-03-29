@@ -168,6 +168,9 @@ pub struct Task {
     pub start_date: Option<DateTime<Utc>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end_date: Option<DateTime<Utc>>,
+    /// Task IDs that are blocked by this task (this task must complete before they can proceed)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub blocks: Vec<TaskId>,
 }
 
 impl Task {
@@ -186,6 +189,7 @@ impl Task {
             rejection_reason: None,
             start_date: None,
             end_date: None,
+            blocks: Vec::new(),
         }
     }
 
@@ -325,6 +329,25 @@ impl Task {
     /// Checks if the task can be marked as done
     pub fn can_mark_done(&self) -> bool {
         self.status == TaskStatus::Review && self.all_acceptance_criteria_completed()
+    }
+
+    /// Marks another task as blocked by this task
+    pub fn add_block(&mut self, task_id: TaskId) {
+        if !self.blocks.contains(&task_id) {
+            self.blocks.push(task_id);
+            self.updated_at = Utc::now();
+        }
+    }
+
+    /// Removes a task from the blocked-by list
+    pub fn remove_block(&mut self, task_id: &TaskId) -> Result<(), crate::error::HlaviError> {
+        if let Some(pos) = self.blocks.iter().position(|id| id == task_id) {
+            self.blocks.remove(pos);
+            self.updated_at = Utc::now();
+            Ok(())
+        } else {
+            Err(crate::error::HlaviError::TaskNotFound(task_id.to_string()))
+        }
     }
 }
 
