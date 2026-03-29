@@ -168,6 +168,9 @@ pub struct Task {
     pub start_date: Option<DateTime<Utc>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end_date: Option<DateTime<Utc>>,
+    /// Optional parent task ID (this task is a subtask of the parent)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent: Option<TaskId>,
     /// Task IDs that are blocked by this task (this task must complete before they can proceed)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub blocks: Vec<TaskId>,
@@ -189,6 +192,7 @@ impl Task {
             rejection_reason: None,
             start_date: None,
             end_date: None,
+            parent: None,
             blocks: Vec::new(),
         }
     }
@@ -329,6 +333,18 @@ impl Task {
     /// Checks if the task can be marked as done
     pub fn can_mark_done(&self) -> bool {
         self.status == TaskStatus::Review && self.all_acceptance_criteria_completed()
+    }
+
+    /// Sets the parent task
+    pub fn set_parent(&mut self, task_id: TaskId) {
+        self.parent = Some(task_id);
+        self.updated_at = Utc::now();
+    }
+
+    /// Clears the parent task
+    pub fn clear_parent(&mut self) {
+        self.parent = None;
+        self.updated_at = Utc::now();
     }
 
     /// Marks another task as blocked by this task
