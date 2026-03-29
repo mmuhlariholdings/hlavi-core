@@ -15,6 +15,8 @@ pub enum SortField {
     End,
     AcProgress,
     AcCount,
+    /// Board column order: higher rank appears higher in the column
+    Rank,
 }
 
 /// Sort order direction
@@ -38,8 +40,9 @@ impl FromStr for SortField {
             "end" => Ok(SortField::End),
             "ac-progress" => Ok(SortField::AcProgress),
             "ac-count" => Ok(SortField::AcCount),
+            "rank" => Ok(SortField::Rank),
             _ => Err(format!(
-                "Invalid sort field '{}'. Valid fields: id, title, status, created, updated, start, end, ac-progress, ac-count",
+                "Invalid sort field '{}'. Valid fields: id, title, status, created, updated, start, end, ac-progress, ac-count, rank",
                 s
             )),
         }
@@ -99,12 +102,33 @@ pub fn sort_tasks(tasks: &mut [Task], field: SortField, order: SortOrder) {
                 .acceptance_criteria
                 .len()
                 .cmp(&b.acceptance_criteria.len()),
+            // Rank: higher rank → earlier in list; tiebreak by updated_at desc
+            SortField::Rank => b
+                .rank
+                .cmp(&a.rank)
+                .then_with(|| b.updated_at.cmp(&a.updated_at)),
         };
 
         match order {
             SortOrder::Ascending => cmp,
+            // Rank is always descending by definition; reversing would invert meaning,
+            // so we skip the reversal for this field regardless of the requested order.
+            SortOrder::Descending if field == SortField::Rank => cmp,
             SortOrder::Descending => cmp.reverse(),
         }
+    });
+}
+
+/// Sort tasks in board column order: highest rank first, most recently updated as tiebreaker.
+///
+/// This is the canonical ordering for rendering kanban columns. Tasks with `rank = 0`
+/// (never explicitly ranked) are ordered by `updated_at` descending among themselves,
+/// so they appear in a consistent, stable order below any explicitly ranked tasks.
+pub fn sort_tasks_for_board(tasks: &mut [Task]) {
+    tasks.sort_by(|a, b| {
+        b.rank
+            .cmp(&a.rank)
+            .then_with(|| b.updated_at.cmp(&a.updated_at))
     });
 }
 

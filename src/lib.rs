@@ -13,7 +13,7 @@ pub mod storage;
 // Re-export commonly used types
 pub use domain::{
     board::{Board, BoardConfig, Column},
-    sorting::{sort_tasks, SortField, SortOrder},
+    sorting::{sort_tasks, sort_tasks_for_board, SortField, SortOrder},
     task::{AcceptanceCriteria, Task, TaskId, TaskStatus},
 };
 pub use error::{HlaviError, Result};
