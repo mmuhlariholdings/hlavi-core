@@ -174,6 +174,13 @@ pub struct Task {
     /// Task IDs that are blocked by this task (this task must complete before they can proceed)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub blocks: Vec<TaskId>,
+    /// Sort rank within the board — higher values appear higher in a column
+    #[serde(default, skip_serializing_if = "is_zero_i64")]
+    pub rank: i64,
+}
+
+fn is_zero_i64(n: &i64) -> bool {
+    *n == 0
 }
 
 impl Task {
@@ -194,6 +201,7 @@ impl Task {
             end_date: None,
             parent: None,
             blocks: Vec::new(),
+            rank: 0,
         }
     }
 
@@ -353,6 +361,12 @@ impl Task {
             self.blocks.push(task_id);
             self.updated_at = Utc::now();
         }
+    }
+
+    /// Sets the sort rank for board ordering
+    pub fn set_rank(&mut self, rank: i64) {
+        self.rank = rank;
+        self.updated_at = Utc::now();
     }
 
     /// Removes a task from the blocked-by list
@@ -664,5 +678,6 @@ mod tests {
         assert_eq!(task.id.as_str(), "HLA1");
         assert!(task.start_date.is_none());
         assert!(task.end_date.is_none());
+        assert_eq!(task.rank, 0);
     }
 }
